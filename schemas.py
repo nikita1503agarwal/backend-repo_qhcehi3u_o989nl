@@ -1,48 +1,55 @@
-"""
-Database Schemas
-
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
-"""
-
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime
 
-# Example schemas (replace with your own):
+# Collections: folder, note, transcription
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class FolderCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=64)
+    color: Optional[str] = Field(None, description="Hex or tailwind color token")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class FolderOut(FolderCreate):
+    id: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-# Add your own schemas here:
-# --------------------------------------------------
+class NoteCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=120)
+    content: str = Field("", description="Markdown/plain content")
+    folder_id: Optional[str] = None
+    tags: Optional[List[str]] = []
+    header_style: Optional[str] = Field("soft", description="soft|minimal|kawaii|serif")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class NoteUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    folder_id: Optional[str] = None
+    tags: Optional[List[str]] = None
+    header_style: Optional[str] = None
+
+class NoteOut(NoteCreate):
+    id: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+# AI endpoints
+class AIRewriteRequest(BaseModel):
+    text: str
+    tone: str = Field(..., description="study|cute|formal|casual|motivational|soft")
+
+class AIIdeasRequest(BaseModel):
+    topic: str
+    style: Optional[str] = "brainstorm"
+    count: Optional[int] = 5
+
+class AISearchRequest(BaseModel):
+    query: str
+
+# Transcription
+class TranscriptionRequest(BaseModel):
+    audio_url: Optional[str] = None
+
+# Export
+class ExportPDFRequest(BaseModel):
+    note_id: str
+    title: Optional[str] = None
